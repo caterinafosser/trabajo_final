@@ -5,6 +5,8 @@ library(ncdf4)
 library(lubridate)
 library(metR)
 library(ggplot2)
+library(RColorBrewer)
+#display.brewer.all()
 
 archivo<-paste(getwd(),"/skt.sfc.mon.mean.nc",sep="")
 nc<-nc_open(archivo)
@@ -22,24 +24,47 @@ colnames(media_clima_mens)<-list("mes","lon","lat","skt")
 enero<-subset(media_clima_mens,mes==1)
 julio<-subset(media_clima_mens,mes==7)
 
-mapa <- map_data("world")
+##mapa centrado en la long. de cambio de fecha:
+mapa <- map_data("world2")
 mi_mapa <- geom_path(data = mapa, aes(long, lat, group = group),
                      linewidth = 0.1)
-plot_enero<- ggplot(data=enero, mapping = aes(x= ConvertLongitude(lon), y=lat))+
+#mapa de enero:
+plot_enero<- ggplot(data=enero, mapping = aes(x= lon, y=lat))+
   geom_contour_fill(aes(z=skt)) +
   geom_contour(aes(z = skt),
                color = "black",
                size = 0.2) +
-  scale_fill_distiller(palette = "RdYlBu", direction = -1) +
+  #scale_fill_gradient2(low = "#19126A",
+  #                     mid = "#E6E2C3",
+  #                    high = "#B11F2C",)+
+  scale_fill_gradientn(colors = hcl.colors(6,palette = "Spectral",rev = T),guide = guide_colourbar(reverse = T))+
+  #scale_fill_distiller(palette(value=c("#E6E2C3","#B11F2C")),
+  #                     direction = 1,
+  #                     guide = guide_colorsteps(barheight = 10,
+  #                                              barwidth =1)) +
   mi_mapa+
-  coord_sf(expand=FALSE)+  ##consultar xq del lado derecho ""faltan""
+  coord_sf(xlim=range(enero$lon),ylim=range(enero$lat),expand=F)+
   labs(x = "Longitud",
       y = "Latitud",
-      fill = "skt [Â°C]",
-      title = "Temperatura en superficie")
+      fill = "skt [°C]",
+      title = "Temperatura en superficie en Enero - Climatologia 1981-2010")
 
-library(RColorBrewer)
-display.brewer.all()
+#mapa de julio:   #CONSULTAR como hacer para elegir los valores de la escala
+plot_julio<- ggplot(data=julio, mapping = aes(x= lon, y=lat))+
+  geom_contour_fill(aes(z=skt)) +
+  geom_contour(aes(z = skt),
+               color = "black",
+               size = 0.2) +
+  scale_fill_distiller(palette = value("#E6E2C3","#DBBBA5","#D19487","#C66D68","#BC464A","#B11F2C"),
+                       direction = -1,
+                       guide = guide_colorsteps(barheight = 10,
+                                                barwidth =1)) +
+  mi_mapa+
+  coord_sf(xlim=range(julio$lon),ylim=range(julio$lat),expand=F)+
+  labs(x = "Longitud",
+       y = "Latitud",
+       fill = "skt [°C]",
+       title = "Temperatura en superficie en Enero - Climatologia 1981-2010")
 
 
 #b-----
@@ -75,7 +100,7 @@ for (i in 1:nrow(prom_ninio_60_20)){
   }
 }
 }
-##Graficar la serie y marcar umbrales +-0.5
+anom_ninio_60_20<-as.data.frame(anom_ninio_60_20)
 
 ##c-----
 
@@ -114,10 +139,10 @@ n<-0
 fecha_i<-c()
 fecha_f<-c()
 duracion<-c()
-for (i in 1:(length(media_movil_anom_ninio)-1)){
+for (i in 1:(length(media_movil_anom_ninio)-1)){  ##hago esto pq mi ultimo dato es <-0.5 (no entra en ninia tho)
   if (media_movil_anom_ninio[i]<=-0.5){
     n<-n+1
-    if (media_movil_anom_ninio[i+1]> -0.5){   ##XQ NO ANDA???!! LLORO
+    if (media_movil_anom_ninio[i+1]> -0.5){ 
       if (n>5){
         duracion<-c(duracion,n)
         fecha_i<-c(fecha_i,paste(prom_ninio_60_20[i-(n-1),1],prom_ninio_60_20[i-(n-1),2],sep="-"))
@@ -129,3 +154,11 @@ for (i in 1:(length(media_movil_anom_ninio)-1)){
 }
 eventos_ninia<-data.frame("Fecha inicio"=fecha_i,"Fecha fin"=fecha_f,"Duracion (meses)"=duracion)
 
+#e----
+
+soi<-read.table(file=paste(getwd(),"/soi.txt",sep=""),skip = 3,header=T)
+{soi_60_20<-subset(soi,soi$YEAR>=1960&soi$YEAR<=2020)
+soi_60_20$YEAR<-NULL
+soi_60_20<-as.matrix(soi_60_20)
+soi_60_20<-matrix(soi_60_20,ncol = 1)
+soi_60_20<-data.frame(soi_60_20)}
