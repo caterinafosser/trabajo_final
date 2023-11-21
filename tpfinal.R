@@ -37,35 +37,38 @@ plot_enero<- ggplot(data=enero, mapping = aes(x= lon, y=lat))+
   #scale_fill_gradient2(low = "#19126A",
   #                     mid = "#E6E2C3",
   #                    high = "#B11F2C",)+
-  scale_fill_gradientn(colors = hcl.colors(6,palette = "Spectral",rev = T),guide = guide_colourbar(reverse = T))+
+  #scale_fill_gradientn(colors = hcl.colors(6,palette = "Spectral",rev = T),guide = guide_colourbar(reverse = T))+
   #scale_fill_distiller(palette(value=c("#E6E2C3","#B11F2C")),
-  #                     direction = 1,
+  #                     direction = -1,
   #                     guide = guide_colorsteps(barheight = 10,
   #                                              barwidth =1)) +
+  scale_fill_stepsn(n.breaks=8,
+                    colours = c("#19126A","#E6E2C3","#B11F2C"),
+                    guide = guide_colorsteps(ticks = T),
+                    limits=c(-60,40))+
   mi_mapa+
   coord_sf(xlim=range(enero$lon),ylim=range(enero$lat),expand=F)+
   labs(x = "Longitud",
       y = "Latitud",
-      fill = "skt [°C]",
+      fill = "skt [Â°C]",
       title = "Temperatura en superficie en Enero - Climatologia 1981-2010")
 
-#mapa de julio:   #CONSULTAR como hacer para elegir los valores de la escala
+#mapa de julio:
 plot_julio<- ggplot(data=julio, mapping = aes(x= lon, y=lat))+
   geom_contour_fill(aes(z=skt)) +
   geom_contour(aes(z = skt),
                color = "black",
                size = 0.2) +
-  scale_fill_distiller(palette = value("#E6E2C3","#DBBBA5","#D19487","#C66D68","#BC464A","#B11F2C"),
-                       direction = -1,
-                       guide = guide_colorsteps(barheight = 10,
-                                                barwidth =1)) +
+  scale_fill_stepsn(n.breaks=8,
+                    colours = c("#19126A","#E6E2C3","#B11F2C"),
+                    guide = guide_colorsteps(ticks = T),
+                    limits=c(-60,40))+
   mi_mapa+
   coord_sf(xlim=range(julio$lon),ylim=range(julio$lat),expand=F)+
   labs(x = "Longitud",
        y = "Latitud",
-       fill = "skt [°C]",
-       title = "Temperatura en superficie en Enero - Climatologia 1981-2010")
-
+       fill = "skt [Â°C]",
+       title = "Temperatura en superficie en Julio - Climatologia 1981-2010")
 
 #b-----
 {
@@ -78,7 +81,6 @@ prom_ninio_60_20<-aggregate(ninio_60_20$skt,list(month(ninio_60_20$time),year(ni
 colnames(prom_ninio_60_20)<-list("mes","anio","skt_ninio_3.4")
 }
 ##tengo un valor de skt para la region Ninio 3.4, para cada mes de cada anio entre 1960-2020. 
-#Graficar esta serie!!
 
 {
 ninio_81_10<-subset(media_clima_mens,lat %in% ninio_60_20$lat)
@@ -100,7 +102,10 @@ for (i in 1:nrow(prom_ninio_60_20)){
   }
 }
 }
-anom_ninio_60_20<-as.data.frame(anom_ninio_60_20)
+anom_ninio_60_20<-as.data.frame(anom_ninio_60_20) #para poder graficar con ggplot2
+
+ggplot(anom_ninio_60_20,mapping=aes(x = anom_ninio_60_20,y=datos$time))
++geom_line()
 
 ##c-----
 
