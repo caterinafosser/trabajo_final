@@ -6,6 +6,7 @@ library(lubridate)
 library(metR)
 library(ggplot2)
 library(RColorBrewer)
+require(gridExtra)
 #display.brewer.all()
 
 archivo<-paste(getwd(),"/skt.sfc.mon.mean.nc",sep="")
@@ -37,13 +38,13 @@ plot_enero<- ggplot(data=enero, mapping = aes(x= lon, y=lat))+
   #scale_fill_gradient2(low = "#19126A",
   #                     mid = "#E6E2C3",
   #                    high = "#B11F2C",)+
-  #scale_fill_gradientn(colors = hcl.colors(6,palette = "Spectral",rev = T),guide = guide_colourbar(reverse = T))+
+  #scale_fill_gradientn(colors = hcl.colors(6,palette = "RdYlBu",rev = T),guide = guide_colourbar(reverse = T))+
   #scale_fill_distiller(palette(value=c("#E6E2C3","#B11F2C")),
   #                     direction = -1,
   #                     guide = guide_colorsteps(barheight = 10,
   #                                              barwidth =1)) +
   scale_fill_stepsn(n.breaks=8,
-                    colours = c("#19126A","#E6E2C3","#B11F2C"),
+                    colours = c("#277da1","#4d908e","#43aa8b","#90be6d","#f9c74f","#f8961e","#f3722c","#f94144"),
                     guide = guide_colorsteps(ticks = T),
                     limits=c(-60,40))+
   mi_mapa+
@@ -60,7 +61,7 @@ plot_julio<- ggplot(data=julio, mapping = aes(x= lon, y=lat))+
                color = "black",
                size = 0.2) +
   scale_fill_stepsn(n.breaks=8,
-                    colours = c("#19126A","#E6E2C3","#B11F2C"),
+                    colours = c("#277da1","#4d908e","#43aa8b","#90be6d","#f9c74f","#f8961e","#f3722c","#f94144"),
                     guide = guide_colorsteps(ticks = T),
                     limits=c(-60,40))+
   mi_mapa+
@@ -72,7 +73,7 @@ plot_julio<- ggplot(data=julio, mapping = aes(x= lon, y=lat))+
 #mapa de julio con recuadro:
 plot_julio_mas_cajita<-plot_julio+geom_rect(xmin = 190, xmax = 240, ymin = -5, ymax = 5,fill=NA,colour="black")
 
-require(gridExtra)
+#junto las figuras:
 figura<-grid.arrange(plot_enero,plot_julio,nrow=1)
 
 
@@ -94,7 +95,7 @@ plot_cajita_julio<-ggplot(data=cajita_julio, mapping = aes(x= lon, y=lat))+
                color = "black",
                size = 0.2) +
   scale_fill_stepsn(n.breaks=8,
-                    colours = c("#19126A","#E6E2C3","#B11F2C"),
+                    colours = c("#277da1","#4d908e","#43aa8b","#90be6d","#f9c74f","#f8961e","#f3722c","#f94144"),
                     guide = guide_colorsteps(ticks = T),
                     limits=c(20,30))+
   mi_mapa+
@@ -141,8 +142,10 @@ serie<-ggplot()+
       #geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras,x=fechas),stat="identity",alpha=0.01,color="pink")+
       #geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras2,x=fechas),stat="identity",alpha=0.01,color="lightblue")+
       geom_line(data=datos_ninio_60_20,mapping=aes(y = anom_ninio_60_20,x=fechas))+
-      geom_hline(yintercept = 0.5,color="red",linetype="dashed")+
-      geom_hline(yintercept = -0.5,color="blue",linetype="dashed")
+      geom_hline(yintercept = 0.5,color="#F94144",linetype="dashed")+
+      geom_hline(yintercept = -0.5,color="#277DA1",linetype="dashed")+
+      geom_text(aes(x = min(datos_ninio_60_20$fechas), y = 0.5, label = 0.5,hjust=1.5,vjust=-1))+
+      geom_text(aes(x = min(datos_ninio_60_20$fechas), y = -0.5, label = -0.5,hjust=1.5,vjust=1.5))
      
 ##c-----
 
@@ -175,8 +178,11 @@ for (i in 1:length(media_movil_anom_ninio)){
     }
   }
 }
-eventos_ninio<-data.frame("Fecha inicio"=fecha_i,"Fecha fin"=fecha_f,"Duracion (meses)"=duracion)
 datos_ninio_60_20$barras<-("barras"=as.vector(barras_ninios))
+#archivo en formato ascii con info:
+eventos_ninio<-data.frame("Fecha_inicio"=fecha_i,"Fecha_fin"=fecha_f,"Duracion_en_meses"=duracion)
+info_eventos_ninio<-"/home/clinux01/Escritorio/Labo_Cate/trabajo_final/eventos_ninio.txt"  ##modificar ruta de salida
+write.table(eventos_ninio,info_eventos_ninio,quote=F)
 }
 
 #busco ninias
@@ -200,25 +206,28 @@ for (i in 1:(length(media_movil_anom_ninio)-1)){  ##hago esto pq mi ultimo dato 
     }
   }
 }
-eventos_ninia<-data.frame("Fecha inicio"=fecha_i,"Fecha fin"=fecha_f,"Duracion (meses)"=duracion)
 datos_ninio_60_20$barras2<-("barras2"=as.vector(barras_ninias))
+#archivo en formato ascii con info:
+eventos_ninia<-data.frame("Fecha_inicio"=fecha_i,"Fecha_fin"=fecha_f,"Duracion_en_meses"=duracion)
+info_eventos_ninia<-"/home/clinux01/Escritorio/Labo_Cate/trabajo_final/eventos_ninia.txt"  ##modificar ruta de salida
+write.table(eventos_ninia,info_eventos_ninia,quote=F)
 }
 
 #serie de anomalias con ninios y ninias superpuestos como barras
 serie2<-ggplot()+
-  geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras,x=fechas),stat="identity",alpha=0.01,color="pink")+
-  geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras2,x=fechas),stat="identity",alpha=0.01,color="lightblue")+
+  geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras,x=fechas),stat="identity",alpha=0.01,color="#F47E3E")+
+  geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras2,x=fechas),stat="identity",alpha=0.01,color="#50B99A")+
   geom_line(data=datos_ninio_60_20,mapping=aes(y = anom_ninio_60_20,x=fechas))+
-  geom_hline(yintercept = 0.5,color="red",linetype="dashed")+
-  geom_hline(yintercept = -0.5,color="blue",linetype="dashed")
+  geom_hline(yintercept = 0.5,color="#F94144",linetype="longdash")+
+  geom_hline(yintercept = -0.5,color="#277DA1",linetype="longdash")
 
 #e----
 
-soi<-read.table(file=paste(getwd(),"/soi.txt",sep=""),skip = 3,header=T)
+{soi<-read.table(file=paste(getwd(),"/soi.txt",sep=""),skip = 3,header=T)
 soi_60_20<-subset(soi,soi$YEAR>=1960&soi$YEAR<=2020)
 soi_60_20$YEAR<-NULL
 soi_60_20<-as.matrix(soi_60_20)
-soi_60_20<-matrix(t(soi_60_20),ncol=1)
+soi_60_20<-matrix(t(soi_60_20),ncol=1)}
 
 datos_ninio_60_20$soi<-as.vector(soi_60_20)
  
