@@ -10,25 +10,26 @@ require(gridExtra)
 #display.brewer.all()
 
 archivo<-paste(getwd(),"/skt.sfc.mon.mean.nc",sep="")
-nc<-nc_open(archivo)
-GlanceNetCDF(nc)
+nc<-nc_open(archivo);rm(archivo)
+GlanceNetCDF(nc) #miro las caracteristicas de los datos
 
-datos<-ReadNetCDF(nc)
+#datos<-ReadNetCDF(nc)
 
 #a-----
-datos_81_10<-ReadNetCDF(nc,vars="skt",
+datos_81_10<-ReadNetCDF(nc,vars="skt", #datos que me interesan p climatologia
                         subset=list(time=c("1981-01-01","2010-12-01")))
-
-media_clima_mens<-aggregate(datos_81_10$skt,list(month(datos_81_10$time),datos_81_10$lon,datos_81_10$lat),mean)
+#media climatologica para cada punto de grilla:
+media_clima_mens<-aggregate(datos_81_10$skt,list(month(datos_81_10$time),datos_81_10$lon,datos_81_10$lat),mean);rm(datos_81_10)
 colnames(media_clima_mens)<-list("mes","lon","lat","skt")
 
+#me quedo con enero y julio para graficarlos:
 enero<-subset(media_clima_mens,mes==1)
 julio<-subset(media_clima_mens,mes==7)
 
 ##mapa centrado en la long. de cambio de fecha:
 mapa <- map_data("world2")
 mi_mapa <- geom_path(data = mapa, aes(long, lat, group = group),
-                     linewidth = 0.1)
+                     linewidth = 0.1);rm(mapa)
 #mapa de enero:
 plot_enero<- ggplot(data=enero, mapping = aes(x= lon, y=lat))+
   geom_contour_fill(aes(z=skt)) +
@@ -52,7 +53,7 @@ plot_enero<- ggplot(data=enero, mapping = aes(x= lon, y=lat))+
   labs(x = "Longitud",
       y = "Latitud",
       fill = "skt [°C]",
-      title = "Temperatura en superficie en Enero - Climatologia 1981-2010")
+      title = "Temperatura en superficie en Enero - Climatologia 1981-2010"); rm(enero)
 
 #mapa de julio:
 plot_julio<- ggplot(data=julio, mapping = aes(x= lon, y=lat))+
@@ -69,25 +70,26 @@ plot_julio<- ggplot(data=julio, mapping = aes(x= lon, y=lat))+
   labs(x = "Longitud",
        y = "Latitud",
        fill = "skt [°C]",
-       title = "Temperatura en superficie en Julio - Climatologia 1981-2010")
+       title = "Temperatura en superficie en Julio - Climatologia 1981-2010"); rm(julio)
 #mapa de julio con recuadro:
 plot_julio_mas_cajita<-plot_julio+geom_rect(xmin = 190, xmax = 240, ymin = -5, ymax = 5,fill=NA,colour="black")
 
-#junto las figuras:
+#junto las figuras para que esten en un mismo panel:
 figura<-grid.arrange(plot_enero,plot_julio,nrow=1)
 
 
-
 #b-----
+###
 ###marco zona de El Ninio 3.4 en el mapa (tomo los datos y hago medias de nuevo):
 cajita_81_10<-ReadNetCDF(nc,vars="skt",
-                        subset=list(lat=list(15:-15),
+                        subset=list(lat=list(15:-15), #limites mayores a los de la region
                                     lon=list(180:250),
                                     time=c("1981-01-01","2010-12-01")))
-media_clima_cajita<-aggregate(cajita_81_10$skt,list(month(cajita_81_10$time),cajita_81_10$lon,cajita_81_10$lat),mean)
+media_clima_cajita<-aggregate(cajita_81_10$skt,list(month(cajita_81_10$time),cajita_81_10$lon,cajita_81_10$lat),mean);rm(cajita_81_10)
 colnames(media_clima_cajita)<-list("mes","lon","lat","skt")
 
-cajita_julio<-subset(media_clima_cajita,mes==7)
+#me quedo con julio para graficar:
+cajita_julio<-subset(media_clima_cajita,mes==7); rm(media_clima_cajita)
 
 plot_cajita_julio<-ggplot(data=cajita_julio, mapping = aes(x= lon, y=lat))+
   geom_contour_fill(aes(z=skt)) +
@@ -100,14 +102,15 @@ plot_cajita_julio<-ggplot(data=cajita_julio, mapping = aes(x= lon, y=lat))+
                     limits=c(20,30))+
   mi_mapa+
   coord_sf(xlim=range(cajita_julio$lon),ylim=range(cajita_julio$lat),expand=F)+
-  geom_rect(xmin = 190, xmax = 240, ymin = -5, ymax = 5,fill=NA,colour="black")
+  geom_rect(xmin = 190, xmax = 240, ymin = -5, ymax = 5,fill=NA,colour="black");rm(cajita_julio)
 
 
+#ahora si trabajo con los datos de el ninio 3.4
 {
 ninio_60_20<-ReadNetCDF(nc,vars="skt",
                         subset=list(lat=list(5:-5),
                                     lon=list(190:240),
-                                    time=c("1960-01-01","2020-12-01")))
+                                    time=c("1960-01-01","2020-12-01"))); rm(nc)
 
 prom_ninio_60_20<-aggregate(ninio_60_20$skt,list(month(ninio_60_20$time),year(ninio_60_20$time)),mean)
 colnames(prom_ninio_60_20)<-list("mes","anio","skt_ninio_3.4")
@@ -115,9 +118,9 @@ colnames(prom_ninio_60_20)<-list("mes","anio","skt_ninio_3.4")
 ##tengo un valor de skt para la region Ninio 3.4, para cada mes de cada anio entre 1960-2020. 
 
 {
-ninio_81_10<-subset(media_clima_mens,lat %in% ninio_60_20$lat)
-ninio_81_10<-subset(ninio_81_10,lon %in% ninio_60_20$lon)
-prom_ninio_81_10<-aggregate(ninio_81_10$skt,list(month(ninio_81_10$mes)),mean)
+ninio_81_10<-subset(media_clima_mens,lat %in% ninio_60_20$lat); rm(media_clima_mens)
+ninio_81_10<-subset(ninio_81_10,lon %in% ninio_60_20$lon); rm(ninio_60_20)
+prom_ninio_81_10<-aggregate(ninio_81_10$skt,list(month(ninio_81_10$mes)),mean); rm(ninio_81_10)
 colnames(prom_ninio_81_10)<-list("mes","skt_clim_3.4")
 }
 #estos son los datos de media climatologica mensual para skt en ninio 3.4. 
@@ -178,7 +181,7 @@ for (i in 1:length(media_movil_anom_ninio)){
     }
   }
 }
-datos_ninio_60_20$barras<-("barras"=as.vector(barras_ninios))
+datos_ninio_60_20$barras<-(as.vector(barras_ninios))
 #archivo en formato ascii con info:
 eventos_ninio<-data.frame("Fecha_inicio"=fecha_i,"Fecha_fin"=fecha_f,"Duracion_en_meses"=duracion)
 info_eventos_ninio<-"/home/clinux01/Escritorio/Labo_Cate/trabajo_final/eventos_ninio.txt"  ##modificar ruta de salida
@@ -206,7 +209,7 @@ for (i in 1:(length(media_movil_anom_ninio)-1)){  ##hago esto pq mi ultimo dato 
     }
   }
 }
-datos_ninio_60_20$barras2<-("barras2"=as.vector(barras_ninias))
+datos_ninio_60_20$barras2<-(as.vector(barras_ninias))
 #archivo en formato ascii con info:
 eventos_ninia<-data.frame("Fecha_inicio"=fecha_i,"Fecha_fin"=fecha_f,"Duracion_en_meses"=duracion)
 info_eventos_ninia<-"/home/clinux01/Escritorio/Labo_Cate/trabajo_final/eventos_ninia.txt"  ##modificar ruta de salida
