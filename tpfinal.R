@@ -1,19 +1,15 @@
 setwd(paste(getwd(),"/Escritorio/Labo_Cate/trabajo_final",sep=""))
 rm(list=ls())
 
-library(ncdf4)
+{library(ncdf4)
 library(lubridate)
 library(metR)
 library(ggplot2)
-library(RColorBrewer)
-require(gridExtra)
-#display.brewer.all()
+require(gridExtra)}
 
 archivo<-paste(getwd(),"/skt.sfc.mon.mean.nc",sep="")
 nc<-nc_open(archivo);rm(archivo)
 GlanceNetCDF(nc) #miro las caracteristicas de los datos
-
-#datos<-ReadNetCDF(nc)
 
 #a-----
 datos_81_10<-ReadNetCDF(nc,vars="skt", #datos que me interesan p climatologia
@@ -36,14 +32,6 @@ plot_enero<- ggplot(data=enero, mapping = aes(x= lon, y=lat))+
   geom_contour(aes(z = skt),
                color = "black",
                size = 0.2) +
-  #scale_fill_gradient2(low = "#19126A",
-  #                     mid = "#E6E2C3",
-  #                    high = "#B11F2C",)+
-  #scale_fill_gradientn(colors = hcl.colors(6,palette = "RdYlBu",rev = T),guide = guide_colourbar(reverse = T))+
-  #scale_fill_distiller(palette(value=c("#E6E2C3","#B11F2C")),
-  #                     direction = -1,
-  #                     guide = guide_colorsteps(barheight = 10,
-  #                                              barwidth =1)) +
   scale_fill_stepsn(n.breaks=8,
                     colours = c("#277da1","#4d908e","#43aa8b","#90be6d","#f9c74f","#f8961e","#f3722c","#f94144"),
                     guide = guide_colorsteps(ticks = T),
@@ -75,7 +63,7 @@ plot_julio<- ggplot(data=julio, mapping = aes(x= lon, y=lat))+
 plot_julio_mas_cajita<-plot_julio+geom_rect(xmin = 190, xmax = 240, ymin = -5, ymax = 5,fill=NA,colour="black")
 
 #junto las figuras para que esten en un mismo panel:
-figura<-grid.arrange(plot_enero,plot_julio,nrow=1)
+plot_both<-grid.arrange(plot_enero,plot_julio,nrow=1)
 
 
 #b-----
@@ -102,7 +90,7 @@ plot_cajita_julio<-ggplot(data=cajita_julio, mapping = aes(x= lon, y=lat))+
                     limits=c(20,30))+
   mi_mapa+
   coord_sf(xlim=range(cajita_julio$lon),ylim=range(cajita_julio$lat),expand=F)+
-  geom_rect(xmin = 190, xmax = 240, ymin = -5, ymax = 5,fill=NA,colour="black");rm(cajita_julio)
+  geom_rect(xmin = 190, xmax = 240, ymin = -5, ymax = 5,fill=NA,colour="black");rm(cajita_julio,mi_mapa)
 
 
 #ahora si trabajo con los datos de el ninio 3.4
@@ -136,20 +124,19 @@ for (i in 1:nrow(prom_ninio_60_20)){
     }
   }
 }
+rm(prom_ninio_81_10)
 }
 
 fechas<-seq(as.Date("1960-01-01"),by="month",length.out=732)
-datos_ninio_60_20<-data.frame(fechas,anom_ninio_60_20) #para poder graficar con ggplot2
+datos_ninio_60_20<-data.frame(fechas,anom_ninio_60_20); rm(fechas) #para poder graficar con ggplot2
 
 serie<-ggplot()+
-      #geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras,x=fechas),stat="identity",alpha=0.01,color="pink")+
-      #geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras2,x=fechas),stat="identity",alpha=0.01,color="lightblue")+
       geom_line(data=datos_ninio_60_20,mapping=aes(y = anom_ninio_60_20,x=fechas))+
       geom_hline(yintercept = 0.5,color="#F94144",linetype="dashed")+
       geom_hline(yintercept = -0.5,color="#277DA1",linetype="dashed")+
       geom_text(aes(x = min(datos_ninio_60_20$fechas), y = 0.5, label = 0.5,hjust=1.5,vjust=-1))+
       geom_text(aes(x = min(datos_ninio_60_20$fechas), y = -0.5, label = -0.5,hjust=1.5,vjust=1.5))
-     
+serie     
 ##c-----
 
 #serie de promedios moviles trimestrales adelantados:
@@ -158,6 +145,7 @@ media_movil_anom_ninio<-c()
 for (i in 2:length(anom_ninio_60_20)-1){
   media_movil_anom_ninio<-c(media_movil_anom_ninio,(anom_ninio_60_20[i-1]+anom_ninio_60_20[i]+anom_ninio_60_20[i+1])/3)
 }
+rm(anom_ninio_60_20)
 }
 
 #busco ninios
@@ -181,11 +169,11 @@ for (i in 1:length(media_movil_anom_ninio)){
     }
   }
 }
-datos_ninio_60_20$barras<-(as.vector(barras_ninios))
+datos_ninio_60_20$barras<-(as.vector(barras_ninios)); rm(barras_ninios)
 #archivo en formato ascii con info:
 eventos_ninio<-data.frame("Fecha_inicio"=fecha_i,"Fecha_fin"=fecha_f,"Duracion_en_meses"=duracion)
-info_eventos_ninio<-"/home/clinux01/Escritorio/Labo_Cate/trabajo_final/eventos_ninio.txt"  ##modificar ruta de salida
-write.table(eventos_ninio,info_eventos_ninio,quote=F)
+info_eventos_ninio<-paste(getwd(),"/eventos_ninio.txt",sep="")
+write.table(eventos_ninio,info_eventos_ninio,quote=F);rm(eventos_ninio,info_eventos_ninio)
 }
 
 #busco ninias
@@ -209,11 +197,12 @@ for (i in 1:(length(media_movil_anom_ninio)-1)){  ##hago esto pq mi ultimo dato 
     }
   }
 }
-datos_ninio_60_20$barras2<-(as.vector(barras_ninias))
+datos_ninio_60_20$barras2<-(as.vector(barras_ninias)); rm(barras_ninias)
 #archivo en formato ascii con info:
 eventos_ninia<-data.frame("Fecha_inicio"=fecha_i,"Fecha_fin"=fecha_f,"Duracion_en_meses"=duracion)
-info_eventos_ninia<-"/home/clinux01/Escritorio/Labo_Cate/trabajo_final/eventos_ninia.txt"  ##modificar ruta de salida
-write.table(eventos_ninia,info_eventos_ninia,quote=F)
+info_eventos_ninia<-paste(getwd(),"/eventos_ninia.txt",sep="")  ##modificar ruta de salida
+write.table(eventos_ninia,info_eventos_ninia,quote=F);rm(eventos_ninia,info_eventos_ninia)
+rm(duracion,fecha_f,fecha_i,i,j,n,media_movil_anom_ninio,prom_ninio_60_20)
 }
 
 #serie de anomalias con ninios y ninias superpuestos como barras
@@ -223,21 +212,22 @@ serie2<-ggplot()+
   geom_line(data=datos_ninio_60_20,mapping=aes(y = anom_ninio_60_20,x=fechas))+
   geom_hline(yintercept = 0.5,color="#F94144",linetype="longdash")+
   geom_hline(yintercept = -0.5,color="#277DA1",linetype="longdash")
-
+serie2
 #e----
 
 {soi<-read.table(file=paste(getwd(),"/soi.txt",sep=""),skip = 3,header=T)
-soi_60_20<-subset(soi,soi$YEAR>=1960&soi$YEAR<=2020)
+soi_60_20<-subset(soi,soi$YEAR>=1960&soi$YEAR<=2020);rm(soi)
 soi_60_20$YEAR<-NULL
 soi_60_20<-as.matrix(soi_60_20)
 soi_60_20<-matrix(t(soi_60_20),ncol=1)}
 
-datos_ninio_60_20$soi<-as.vector(soi_60_20)
+datos_ninio_60_20$soi<-as.vector(soi_60_20); rm(soi_60_20)
  
 serie3<-ggplot()+
   geom_line(data=datos_ninio_60_20,mapping=aes(y = anom_ninio_60_20,x=fechas))+
-  geom_hline(yintercept = 0.5,color="red",linetype="dashed")+
-  geom_hline(yintercept = -0.5,color="blue",linetype="dashed")+
+  geom_hline(yintercept = 0.5,color="#F94144",linetype="dashed")+
+  geom_hline(yintercept = -0.5,color="#277DA1",linetype="dashed")+
   geom_line(data=datos_ninio_60_20,mapping=aes(y=soi,x=fechas))
 
+serie3
 ##probar haciendo medias trimestrales moviles del SOI (grafico aparte)
