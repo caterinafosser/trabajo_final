@@ -1,11 +1,13 @@
 setwd(paste(getwd(),"/Escritorio/Labo_Cate/trabajo_final",sep=""))
 rm(list=ls())
 
+#cargo librerias que voy a usar
 {library(ncdf4)
 library(lubridate)
 library(metR)
 library(ggplot2)
-require(gridExtra)}
+library(gridExtra)
+library(cowplot)}
 
 archivo<-paste(getwd(),"/skt.sfc.mon.mean.nc",sep="")
 nc<-nc_open(archivo);rm(archivo)
@@ -41,7 +43,9 @@ plot_enero<- ggplot(data=enero, mapping = aes(x= lon, y=lat))+
   labs(x = "Longitud",
       y = "Latitud",
       fill = "skt [°C]",
-      title = "Temperatura en superficie en Enero - Climatologia 1981-2010"); rm(enero)
+      title = "Temperatura en superficie en Enero - Climatologia 1981-2010")+
+  theme(
+    plot.title = element_text(hjust = 0.5));rm(enero)
 
 #mapa de julio:
 plot_julio<- ggplot(data=julio, mapping = aes(x= lon, y=lat))+
@@ -58,13 +62,17 @@ plot_julio<- ggplot(data=julio, mapping = aes(x= lon, y=lat))+
   labs(x = "Longitud",
        y = "Latitud",
        fill = "skt [°C]",
-       title = "Temperatura en superficie en Julio - Climatologia 1981-2010"); rm(julio)
+       title = "Temperatura en superficie en Julio - Climatologia 1981-2010")+
+  theme(
+    plot.title = element_text(hjust = 0.5));rm(julio)
+
 #mapa de julio con recuadro:
 plot_julio_mas_cajita<-plot_julio+geom_rect(xmin = 190, xmax = 240, ymin = -5, ymax = 5,fill=NA,colour="black")
 
 #junto las figuras para que esten en un mismo panel:
-plot_both<-grid.arrange(plot_enero,plot_julio,nrow=1)
-
+plot_both<-plot_grid(plot_enero + theme(legend.position = "none"),
+                     plot_julio + theme(legend.position = "right"),
+                     ncol=2,rel_widths = c(1, 1.14))
 
 #b-----
 ###
@@ -87,10 +95,16 @@ plot_cajita_julio<-ggplot(data=cajita_julio, mapping = aes(x= lon, y=lat))+
   scale_fill_stepsn(n.breaks=8,
                     colours = c("#277da1","#4d908e","#43aa8b","#90be6d","#f9c74f","#f8961e","#f3722c","#f94144"),
                     guide = guide_colorsteps(ticks = T),
-                    limits=c(20,30))+
+                    limits=c(22,30))+
   mi_mapa+
   coord_sf(xlim=range(cajita_julio$lon),ylim=range(cajita_julio$lat),expand=F)+
-  geom_rect(xmin = 190, xmax = 240, ymin = -5, ymax = 5,fill=NA,colour="black");rm(cajita_julio,mi_mapa)
+  geom_rect(xmin = 190, xmax = 240, ymin = -5, ymax = 5,fill=NA,colour="black")+
+  labs(x="Longitud",
+       y="Latitud",
+       title="Temperatura superficial en la región Niño 3.4 - Climatologia 1981-2010",
+       fill = "skt [°C]")+
+  theme(
+    plot.title = element_text(hjust = 0.5));rm(cajita_julio,mi_mapa)
 
 
 #ahora si trabajo con los datos de el ninio 3.4
@@ -132,11 +146,15 @@ datos_ninio_60_20<-data.frame(fechas,anom_ninio_60_20); rm(fechas) #para poder g
 
 serie<-ggplot()+
       geom_line(data=datos_ninio_60_20,mapping=aes(y = anom_ninio_60_20,x=fechas))+
-      geom_hline(yintercept = 0.5,color="#F94144",linetype="dashed")+
-      geom_hline(yintercept = -0.5,color="#277DA1",linetype="dashed")+
+      geom_hline(yintercept = 0.5,color="#F94144",linetype="longdash")+
+      geom_hline(yintercept = -0.5,color="#277DA1",linetype="longdash")+
       geom_text(aes(x = min(datos_ninio_60_20$fechas), y = 0.5, label = 0.5,hjust=1.5,vjust=-1))+
-      geom_text(aes(x = min(datos_ninio_60_20$fechas), y = -0.5, label = -0.5,hjust=1.5,vjust=1.5))
-serie     
+      geom_text(aes(x = min(datos_ninio_60_20$fechas), y = -0.5, label = -0.5,hjust=1.5,vjust=1.5))+
+      labs(x="Año",
+           y="Anomalía",
+           title="Serie de anomalías de skt en la región Niño 3.4",
+           subtitle="con respecto al período 1981-2010")+
+      theme_minimal()
 ##c-----
 
 #serie de promedios moviles trimestrales adelantados:
@@ -207,12 +225,18 @@ rm(duracion,fecha_f,fecha_i,i,j,n,media_movil_anom_ninio,prom_ninio_60_20)
 
 #serie de anomalias con ninios y ninias superpuestos como barras
 serie2<-ggplot()+
-  geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras,x=fechas),stat="identity",alpha=0.01,color="#F47E3E")+
-  geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras2,x=fechas),stat="identity",alpha=0.01,color="#50B99A")+
+  geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras,x=fechas,color="El Niño"),stat="identity",alpha=0.01)+
+  geom_bar(data=datos_ninio_60_20,mapping=aes(y = barras2,x=fechas,color="La Niña"),stat="identity",alpha=0.01)+
   geom_line(data=datos_ninio_60_20,mapping=aes(y = anom_ninio_60_20,x=fechas))+
   geom_hline(yintercept = 0.5,color="#F94144",linetype="longdash")+
-  geom_hline(yintercept = -0.5,color="#277DA1",linetype="longdash")
-serie2
+  geom_hline(yintercept = -0.5,color="#277DA1",linetype="longdash")+
+  scale_color_manual(values=c("El Niño"="#F47E3E","La Niña"="#50B99A"))+
+  labs(x="Año",
+       y="Anomalía",
+       title="Serie de anomalías de skt en la región Niño 3.4",
+       subtitle="con respecto al período 1981-2010",
+       color="Eventos ENSO")+
+  theme_minimal()
 #e----
 
 {soi<-read.table(file=paste(getwd(),"/soi.txt",sep=""),skip = 3,header=T)
@@ -224,10 +248,15 @@ soi_60_20<-matrix(t(soi_60_20),ncol=1)}
 datos_ninio_60_20$soi<-as.vector(soi_60_20); rm(soi_60_20)
  
 serie3<-ggplot()+
-  geom_line(data=datos_ninio_60_20,mapping=aes(y = anom_ninio_60_20,x=fechas))+
+  geom_line(data=datos_ninio_60_20,mapping=aes(y = anom_ninio_60_20,x=fechas,color="Anom. skt"))+
+  geom_line(data=datos_ninio_60_20,mapping=aes(y=soi,x=fechas,color="SOI"))+
   geom_hline(yintercept = 0.5,color="#F94144",linetype="dashed")+
   geom_hline(yintercept = -0.5,color="#277DA1",linetype="dashed")+
-  geom_line(data=datos_ninio_60_20,mapping=aes(y=soi,x=fechas))
+  scale_color_manual(values=c("Anom. skt"="#E75A0D","SOI"="#3A9278"))+
+  labs(x="Año",
+       y="Anomalía/Índice",
+       title="Serie de anomalías de skt e índice SOI en la región Niño 3.4",
+       color="Índices ENSO")+
+  theme_minimal()
 
-serie3
-##probar haciendo medias trimestrales moviles del SOI (grafico aparte)
+#FiN! :)
